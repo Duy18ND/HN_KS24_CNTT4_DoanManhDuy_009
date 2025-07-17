@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 typedef struct Music {
     char NameMusic[100];
 }Music;
