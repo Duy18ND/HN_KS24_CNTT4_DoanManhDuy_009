@@ -1,6 +1,7 @@
 #include<stdio.h>
 #include<stdlib.h>
 #include<string.h>
+#include <ctype.h>
 typedef struct Product {
     int Id;
     char Name[100];
@@ -53,6 +54,20 @@ void addProduct(SingleNode** head, Product product) {
     }
     current->next = newNode;
 }
+//Them vao cuoi DSLK doi
+void addDobleNode(DoubleNode** head, Product product) {
+    DoubleNode* newNode = createDoubleNode(product);
+    if (*head == NULL) {
+        *head = newNode;
+        return;
+    }
+    DoubleNode* temp = *head;
+    while (temp->next != NULL) {
+        temp = temp->next;
+    }
+    temp->next = newNode;
+    newNode->prev = temp;
+}
 //Tao ham In
 void printProduct(SingleNode** head) {
     //Kiem tra danh sach trong
@@ -96,6 +111,17 @@ SingleNode* deleteProduct(SingleNode** head, int id) {
     }
     printf("Khong tim thay ID can xoa\n");
 }
+//Kiem tra ten bi trung
+int isDuplicateName(SingleNode* head, const char* name, int skipId) {
+    while (head != NULL) {
+        if (strcmp(head->product.Name, name) == 0 && head->product.Id != skipId) {
+            return 1;
+        }
+        head = head->next;
+    }
+    return 0;
+}
+
 //Cap nhap san pham
 void updateProduct(SingleNode** head, int id) {
     if (isEmptySingleNode(*head)) {
@@ -106,10 +132,20 @@ void updateProduct(SingleNode** head, int id) {
     while (temp != NULL) {
         if (temp->product.Id == id) {
             printf("ID: %d\n", temp->product.Id);
-            printf("Moi ban nhap ten san pham: ");
+
+            char newName[100];
             getchar();
-            fgets(temp->product.Name, 100, stdin);
-            temp->product.Name[strcspn(temp->product.Name, "\n")] = 0;
+            printf("Moi ban nhap ten san pham: ");
+            fgets(newName, 100, stdin);
+            newName[strcspn(newName, "\n")] = 0;
+
+            // Kiem tra ten trung lap
+            if (isDuplicateName(*head, newName, id)) {
+                printf("Ten san pham da ton tai. Cap nhat that bai!\n");
+                return;
+            }
+
+            strcpy(temp->product.Name, newName);
             printf("Moi ban nhap gia ban san pham: ");
             scanf("%d", &temp->product.Price);
             printf("Moi ban nhap so luong san pham: ");
@@ -121,6 +157,55 @@ void updateProduct(SingleNode** head, int id) {
     }
     printf("Khong tim thay ID can cap nhat\n");
 }
+//Danh dau san pham da ban
+void markProduct(SingleNode** head, DoubleNode** soldHead, int id) {
+    if (isEmptySingleNode(*head)) {
+        printf("Danh sach san pham rong!\n");
+        return;
+    }
+
+    SingleNode* temp = *head;
+    SingleNode* prev = NULL;
+
+    while (temp != NULL) {
+        if (temp->product.Id == id) {
+           addDobleNode(soldHead, temp->product);
+
+            if (prev == NULL) {
+                *head = temp->next;
+            } else {
+                prev->next = temp->next;
+            }
+
+            free(temp);
+            printf("San pham ID %d da duoc danh dau la da ban.\n", id);
+            return;
+        }
+
+        prev = temp;
+        temp = temp->next;
+    }
+    printf("Khong tim thay san pham co ID = %d\n", id);
+}
+//In san pham da ban
+void printDoubleNode(DoubleNode* head) {
+    if (isEmptyDoubleNode(head)) {
+        printf("Danh sach san pham da ban rong!\n");
+        return;
+    }
+
+    DoubleNode* temp = head;
+    printf("\n----- Danh sach san pham da ban -----\n");
+    while (temp != NULL) {
+        printf("------------------------------------------\n");
+        printf("ID: %d\n", temp->product.Id);
+        printf("Name: %s\n", temp->product.Name);
+        printf("Price: %d\n", temp->product.Price);
+        printf("Quantity: %d\n", temp->product.Quantity);
+        temp = temp->next;
+    }
+}
+
 //Sap xep
 void sortProduct(SingleNode** head) {
     if (isEmptySingleNode(*head)) {
@@ -137,15 +222,6 @@ void sortProduct(SingleNode** head) {
             }
         }
     }
-}
-//tao length
-int length(SingleNode* head) {
-    int length = 0;
-    while (head != NULL) {
-        length++;
-        head = head->next;
-    }
-    return length;
 }
 
 int main(){
@@ -200,8 +276,17 @@ int main(){
                 updateProduct(&singleNode, UpdateId);
                 break;
             case 5:
+                if (isEmptySingleNode(singleNode)) {
+                    printf("Danh sach san pham trong!\n");
+                        break;
+                }
+                int soldId;
+                printf("Nhap ID san pham muon danh dau da ban: ");
+                scanf("%d", &soldId);
+                markProduct(&singleNode, &doubleNode, soldId);
                 break;
             case 6:
+                printDoubleNode(doubleNode);
                 break;
             case 7:
                 sortProduct(&singleNode);
